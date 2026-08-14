@@ -15,7 +15,7 @@ export default function Home() {
         }}
       >
         <Image
-          src="/images/chiya-pasal.jpg"
+          src="/images/image.png"
           alt=""
           fill
           sizes="100vw"
