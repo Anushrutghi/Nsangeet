@@ -16,7 +16,7 @@ export default function Home() {
       >
         <Image
           src="/images/chiya-pasal.jpg"
-          alt="Rai ko chiya pasal"
+          alt=""
           fill
           sizes="100vw"
           priority
@@ -30,50 +30,26 @@ export default function Home() {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(180deg, rgba(0,0,0,0.18), transparent 35%, rgba(0,0,0,0.12))",
+              "linear-gradient(180deg, rgba(0,0,0,0.25), transparent 40%, rgba(0,0,0,0.18))",
             pointerEvents: "none",
             zIndex: 1,
           }}
         />
-        <div
-          style={{
-            position: "absolute",
-            top: "38%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "90vw",
-            maxWidth: 1000,
-            textAlign: "center",
-            fontFamily: "var(--font-yatra-one), serif",
-            color: "#f8f6f3",
-            fontSize: "clamp(50px, 9vw, 130px)",
-            fontWeight: 400,
-            lineHeight: 0.9,
-            letterSpacing: 0,
-            textShadow:
-              "0 3px 8px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.25)",
-            zIndex: 10,
-            pointerEvents: "none",
-          }}
-        >
-          <div>राईको चिया</div>
-          <div>पसल</div>
-          <div
-            className="story-text"
-            style={{
-              marginTop: 22,
-              fontFamily: "var(--font-yatra-one), serif",
-              fontSize: "clamp(11px, 1.5vw, 18px)",
-              fontWeight: 400,
-              lineHeight: 1.4,
-              color: "rgb(255, 248, 235)",
-              letterSpacing: 0.1,
-              textShadow: "0 2px 6px rgba(0,0,0,0.45)",
-              opacity: 0,
-              animation: "storyFade 7s ease-in-out forwards",
-            }}
-          >
-            नेपाली स्वरहरू, एउटै चियाको धुवाँमा।
+
+        <div className="hero-brand">
+          <div className="hero-logo">
+            <Image
+              src="/images/nsangeet-logo.png"
+              alt="Nsangeet logo"
+              width={300}
+              height={226}
+              priority
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
+          </div>
+          <div className="hero-title">Nsangeet</div>
+          <div className="hero-tagline">
+            नेपाली संगीतको रेडियो — ९ कलाकार, ४५ गीत
           </div>
         </div>
       </div>

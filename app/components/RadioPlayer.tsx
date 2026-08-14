@@ -605,8 +605,8 @@ export default function RadioPlayer() {
 
         <div className="keyboard-hint">
           {mode === "yt" && !playing
-            ? "बजाउन थाल्नुहोस् ▶ — चिया तातो छ"
-            : `${artist.name} बजिरहेको छ — चिया तातो छ, रेडियो चलिरहेको छ`}
+            ? "बजाउन थाल्नुहोस् ▶ — Nsangeet"
+            : `${artist.name} बजिरहेको छ — Nsangeet, रेडियो चलिरहेको छ`}
         </div>
       </div>
     </>

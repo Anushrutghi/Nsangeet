@@ -19,22 +19,25 @@ const yatraOne = Yatra_One({
 });
 
 export const metadata: Metadata = {
-  title: "Rai ko Chiya Pasal — राईको चिया पसल",
+  title: "Nsangeet — नेपाली संगीतको रेडियो",
   description:
-    "A cozy Nepali roadside tea shop, and an old radio playing Sabin Rai, John Rai, Bartika Eam Rai, Ankita Pun, Sajjan Raj Vaidya, Sushant KC, Samir Shrestha, The Elements and The Tribal Rain.",
+    "A cozy Nepali radio streaming Sabin Rai, John Rai, Bartika Eam Rai, Ankita Pun, Sajjan Raj Vaidya, Sushant KC, Samir Shrestha, The Elements and The Tribal Rain.",
   openGraph: {
-    title: "Rai ko Chiya Pasal — राईको चिया पसल",
+    title: "Nsangeet — नेपाली संगीतको रेडियो",
     description:
-      "A cozy Nepali roadside tea shop, and an old radio playing 9 Nepali artists — switch them from the top-right menu.",
+      "A Nepali music radio — 9 artists, 45 hit songs. Switch artists from the top-right menu.",
     type: "website",
-    images: ["/images/chiya-pasal.jpg"],
+    images: ["/images/nsangeet-logo.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rai ko Chiya Pasal — राईको चिया पसल",
+    title: "Nsangeet — नेपाली संगीतको रेडियो",
     description:
-      "A cozy Nepali roadside tea shop, and an old radio playing 9 Nepali artists — switch them from the top-right menu.",
-    images: ["/images/chiya-pasal.jpg"],
+      "A Nepali music radio — 9 artists, 45 hit songs. Switch artists from the top-right menu.",
+    images: ["/images/nsangeet-logo.png"],
+  },
+  icons: {
+    icon: "/images/nsangeet-logo.png",
   },
 };
 

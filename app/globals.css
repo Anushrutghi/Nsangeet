@@ -30,8 +30,62 @@ body {
   overflow: hidden;
 }
 
-.story-text {
-  white-space: nowrap;
+.hero-brand {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(72vw, 460px);
+  text-align: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hero-logo {
+  width: min(64vw, 300px);
+  filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.55));
+  animation: logoIn 1.1s ease forwards;
+  opacity: 0;
+}
+
+@keyframes logoIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hero-title {
+  margin-top: 22px;
+  font-family: var(--font-yatra-one), serif;
+  font-size: clamp(42px, 7vw, 92px);
+  font-weight: 400;
+  line-height: 0.95;
+  color: #f8f6f3;
+  letter-spacing: 2px;
+  text-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.4),
+    0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.hero-tagline {
+  margin-top: 14px;
+  font-family: var(--font-yatra-one), serif;
+  font-size: clamp(12px, 1.7vw, 19px);
+  font-weight: 400;
+  line-height: 1.4;
+  color: rgb(255, 248, 235);
+  letter-spacing: 0.1px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  animation: storyFade 7s ease-in-out 1.2s forwards;
+  opacity: 0;
 }
 
 @keyframes storyFade {
@@ -40,11 +94,11 @@ body {
     transform: translateY(5px);
   }
   12% {
-    opacity: 0.82;
+    opacity: 0.85;
     transform: translateY(0);
   }
   82% {
-    opacity: 0.82;
+    opacity: 0.85;
     transform: translateY(0);
   }
   100% {
@@ -53,10 +107,16 @@ body {
   }
 }
 
-@media (max-width: 600px) {
-  .story-text {
-    white-space: normal;
-    max-width: 85vw;
+@media (max-width: 480px) {
+  .hero-brand {
+    top: 46%;
+    width: 86vw;
+  }
+  .hero-title {
+    margin-top: 14px;
+  }
+  .hero-tagline {
+    max-width: 84vw;
   }
 }
 
