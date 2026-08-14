@@ -2,6 +2,50 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+type LyricLine = {
+  time: number;
+  text: string;
+};
+
+type LyricsState = {
+  trackKey: string;
+  status: "loading" | "ok" | "missing";
+  lines: LyricLine[];
+  plain: string;
+};
+
+const EMPTY_LYRICS: LyricsState = {
+  trackKey: "",
+  status: "loading",
+  lines: [],
+  plain: "",
+};
+
+// Parse LRC timestamped lyrics ("[mm:ss.xx]text") into {time, text} pairs.
+function parseLrc(lrc: string | null | undefined): LyricLine[] {
+  if (!lrc) return [];
+  const out: LyricLine[] = [];
+  const re = /\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
+  for (const raw of lrc.split("\n")) {
+    const text = raw.replace(re, "").trim();
+    if (!text) continue;
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    let first = true;
+    while ((m = re.exec(raw)) !== null) {
+      if (!first) continue;
+      first = false;
+      const min = parseInt(m[1], 10);
+      const sec = parseInt(m[2], 10);
+      const fracRaw = (m[3] ?? "0").padEnd(3, "0").slice(0, 3);
+      const time = min * 60 + sec + parseInt(fracRaw, 10) / 1000;
+      out.push({ time, text });
+    }
+  }
+  out.sort((a, b) => a.time - b.time);
+  return out;
+}
+
 type Track = {
   title: string;
   artist: string;
@@ -242,6 +286,10 @@ export default function RadioPlayer() {
   const [fade, setFade] = useState(true);
   const [mode, setMode] = useState<"loading" | "yt" | "sim">("loading");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [lyrics, setLyrics] = useState<LyricsState>(EMPTY_LYRICS);
+
+  const lyricsBoxRef = useRef<HTMLDivElement | null>(null);
+  const activeLineRef = useRef<HTMLDivElement | null>(null);
 
   const playerRef = useRef<YTPlayer | null>(null);
   const indexRef = useRef(0);
@@ -313,6 +361,64 @@ export default function RadioPlayer() {
     }
     setMenuOpen(false);
   };
+
+  const trackKey = `${artistId}-${index}`;
+
+  // Fetch lyrics for the current track whenever it changes. The result is
+  // stored keyed by track so switching tracks shows the loading state
+  // purely through render logic (no synchronous setState in the effect).
+  useEffect(() => {
+    let cancelled = false;
+    const ctrl = new AbortController();
+    const params = new URLSearchParams({
+      artist: track.artist,
+      track: track.title,
+    });
+    fetch(`/api/lyrics?${params.toString()}`, { signal: ctrl.signal })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("not found");
+        const data = (await res.json()) as {
+          syncedLyrics?: string | null;
+          plainLyrics?: string | null;
+        };
+        if (cancelled) return;
+        setLyrics({
+          trackKey,
+          status: "ok",
+          lines: parseLrc(data.syncedLyrics),
+          plain: data.plainLyrics ?? "",
+        });
+      })
+      .catch(() => {
+        if (!cancelled)
+          setLyrics({ trackKey, status: "missing", lines: [], plain: "" });
+      });
+    return () => {
+      cancelled = true;
+      ctrl.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackKey]);
+
+  const currentLyrics: LyricsState =
+    lyrics.trackKey === trackKey ? lyrics : EMPTY_LYRICS;
+
+  // Highlight + auto-scroll the lyric line matching the current playback time.
+  const activeLyricIndex = useMemo(() => {
+    let idx = -1;
+    for (let i = 0; i < lyrics.lines.length; i++) {
+      if (lyrics.lines[i].time <= elapsed) idx = i;
+      else break;
+    }
+    return idx;
+  }, [lyrics.lines, elapsed]);
+
+  useEffect(() => {
+    activeLineRef.current?.scrollIntoView({
+      block: "center",
+      behavior: "smooth",
+    });
+  }, [activeLyricIndex]);
 
   // Load the YouTube IFrame API and create the hidden player.
   useEffect(() => {
@@ -531,6 +637,47 @@ export default function RadioPlayer() {
             </div>
           </>
         )}
+      </div>
+
+      {/* Left: synced lyrics */}
+      <div className="lyrics-panel" key={trackKey}>
+        <div className="lyrics-head">गीत — LYRICS</div>
+        {currentLyrics.status === "loading" && (
+          <div className="lyrics-state">गीतका शब्दहरू खोज्दै…</div>
+        )}
+        {currentLyrics.status === "missing" && (
+          <div className="lyrics-state">
+            गीतको शब्द भेटिएन — lyrics not found
+          </div>
+        )}
+        {currentLyrics.status === "ok" &&
+          currentLyrics.lines.length === 0 && (
+            <div className="lyrics-scroll" ref={lyricsBoxRef}>
+              {(currentLyrics.plain || "No lyrics available")
+                .split("\n")
+                .map((l, i) => (
+                  <div className="lyrics-line" key={i}>
+                    {l}
+                  </div>
+                ))}
+            </div>
+          )}
+        {currentLyrics.status === "ok" &&
+          currentLyrics.lines.length > 0 && (
+            <div className="lyrics-scroll" ref={lyricsBoxRef}>
+              {currentLyrics.lines.map((l, i) => (
+                <div
+                  className={`lyrics-line ${
+                    i === activeLyricIndex ? "active" : ""
+                  }`}
+                  key={i}
+                  ref={i === activeLyricIndex ? activeLineRef : undefined}
+                >
+                  {l.text}
+                </div>
+              ))}
+            </div>
+          )}
       </div>
 
       {/* Bottom: glass radio player */}
