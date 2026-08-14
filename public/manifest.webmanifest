@@ -1,7 +1,7 @@
 {
   "name": "Nsangeet — नेपाली संगीतको रेडियो",
   "short_name": "Nsangeet",
-  "description": "Nepali music radio — 9 artists, 45 hit songs with synced lyrics.",
+  "description": "Nepali music radio — 9 artists, 45 hit songs with karaoke-synced lyrics. Created by Anushrut Ghimire.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

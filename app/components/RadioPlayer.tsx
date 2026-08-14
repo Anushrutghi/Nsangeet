@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type LyricLine = {
   time: number;
@@ -221,6 +221,43 @@ function formatTime(s: number) {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
+// Material-style inline icons for the transport controls. Inline SVG (not
+// emoji) renders identically on every platform and follows the button's
+// text color via currentColor.
+type IconProps = { size?: number };
+
+function PlayIcon({ size = 24 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}
+
+function PauseIcon({ size = 24 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+    </svg>
+  );
+}
+
+function PrevIcon({ size = 24 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+    </svg>
+  );
+}
+
+function NextIcon({ size = 24 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+    </svg>
+  );
+}
+
 type YTPlayer = {
   playVideo: () => void;
   pauseVideo: () => void;
@@ -271,6 +308,15 @@ export default function RadioPlayer() {
   const lyricsBoxRef = useRef<HTMLDivElement | null>(null);
   const activeLineRef = useRef<HTMLDivElement | null>(null);
 
+  // Timestamp of the last time the user manually scrolled the lyrics
+  // panel. Auto-scroll stands aside for a few seconds afterwards so it
+  // never fights the user's finger.
+  const lastManualScrollRef = useRef(0);
+
+  const markManualScroll = () => {
+    lastManualScrollRef.current = Date.now();
+  };
+
   const playerRef = useRef<YTPlayer | null>(null);
   const indexRef = useRef(0);
   const tracksRef = useRef<Track[]>(ARTISTS[0].tracks);
@@ -311,14 +357,20 @@ export default function RadioPlayer() {
     setPlaying((p) => !p);
   };
 
+  const seekToSeconds = useCallback(
+    (target: number) => {
+      if (mode === "yt" && playerRef.current) {
+        playerRef.current.seekTo(target, true);
+      }
+      setElapsed(target);
+    },
+    [mode]
+  );
+
   const seekToClientX = (clientX: number, element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    const target = ratio * duration;
-    if (mode === "yt" && playerRef.current) {
-      playerRef.current.seekTo(target, true);
-    }
-    setElapsed(target);
+    seekToSeconds(ratio * duration);
   };
 
   const seek = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -408,51 +460,84 @@ export default function RadioPlayer() {
   const [lyricOffset, setLyricOffset] = useState(0);
 
   useEffect(() => {
-    if (currentLyrics.trackKey !== trackKey) {
-      setLyricOffset(0);
-      return;
+    // All early-exit cases resolve to an offset of 0, so a single guarded
+    // setState at the end keeps this effect side-effect-free per run.
+    let offset = 0;
+    if (
+      currentLyrics.trackKey === trackKey &&
+      mode === "yt" &&
+      playerRef.current &&
+      currentLyrics.status === "ok" &&
+      currentLyrics.lines.length > 0
+    ) {
+      const videoDur = playerRef.current.getDuration();
+      const lrcEnd = currentLyrics.lines[currentLyrics.lines.length - 1].time;
+      // Trust LRCLIB's stated duration only when it's consistent with the
+      // actual LRC content (some records carry the video length instead of
+      // the audio length). Otherwise fall back to the last lyric time.
+      const rec = currentLyrics.recordDuration;
+      const versionDur =
+        rec && rec >= lrcEnd * 0.85 ? Math.max(rec, lrcEnd) : lrcEnd;
+      if (videoDur > 0 && versionDur > 0) {
+        const gap = videoDur - versionDur;
+        offset = gap >= 30 ? Math.max(0, Math.min(180, gap - 5)) : 0;
+      }
     }
-    if (mode !== "yt" || !playerRef.current) {
-      setLyricOffset(0);
-      return;
-    }
-    if (currentLyrics.status !== "ok" || currentLyrics.lines.length === 0) {
-      setLyricOffset(0);
-      return;
-    }
-    const videoDur = playerRef.current.getDuration();
-    const lrcEnd = currentLyrics.lines[currentLyrics.lines.length - 1].time;
-    // Trust LRCLIB's stated duration only when it's consistent with the
-    // actual LRC content (some records carry the video length instead of
-    // the audio length). Otherwise fall back to the last lyric time.
-    const rec = currentLyrics.recordDuration;
-    const versionDur =
-      rec && rec >= lrcEnd * 0.85 ? Math.max(rec, lrcEnd) : lrcEnd;
-    if (!(videoDur > 0) || !(versionDur > 0)) {
-      setLyricOffset(0);
-      return;
-    }
-    const gap = videoDur - versionDur;
-    setLyricOffset(gap >= 30 ? Math.max(0, Math.min(180, gap - 5)) : 0);
+    setLyricOffset(offset);
   }, [mode, duration, trackKey, currentLyrics]);
 
   // Highlight + auto-scroll the lyric line matching the current playback
   // time (plus the per-track calibration offset).
   const activeLyricIndex = useMemo(() => {
+    // Compute against currentLyrics (the track on screen) rather than the
+    // raw state: while a new track's lyrics are still loading, the raw
+    // state holds the previous track's lines.
+    const lines = currentLyrics.lines;
     let idx = -1;
-    for (let i = 0; i < lyrics.lines.length; i++) {
-      if (lyrics.lines[i].time + lyricOffset <= elapsed) idx = i;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].time + lyricOffset <= elapsed) idx = i;
       else break;
     }
     return idx;
-  }, [lyrics.lines, elapsed, lyricOffset]);
+  }, [currentLyrics, elapsed, lyricOffset]);
 
+  // Keep the karaoke line in view. Only scroll when the active line has
+  // drifted outside the visible band — if the user is reading ahead, the
+  // panel waits instead of yanking the scroll on every line change. The
+  // scroll is driven manually on the lyrics container (never
+  // scrollIntoView, which can scroll the whole page and is unreliable in
+  // WebViews); CSS `scroll-behavior: smooth` animates it.
   useEffect(() => {
-    activeLineRef.current?.scrollIntoView({
-      block: "center",
-      behavior: "smooth",
-    });
+    const box = lyricsBoxRef.current;
+    const active = activeLineRef.current;
+    if (!box || !active) return;
+    const boxTop = box.getBoundingClientRect().top;
+    const boxBottom = boxTop + box.clientHeight;
+    const lineTop = active.getBoundingClientRect().top;
+    const lineBottom = lineTop + active.offsetHeight;
+    if (lineTop >= boxTop + 8 && lineBottom <= boxBottom - 8) return;
+    const target =
+      active.offsetTop - box.offsetTop - (box.clientHeight - active.offsetHeight) / 2;
+    box.scrollTop = Math.max(
+      0,
+      Math.min(target, box.scrollHeight - box.clientHeight)
+    );
   }, [activeLyricIndex]);
+
+  // Plain (un-timed) lyrics: scroll through the text as playback advances
+  // so songs without karaoke timestamps still move with the music. Stands
+  // aside for a few seconds after the user scrolls manually.
+  useEffect(() => {
+    const box = lyricsBoxRef.current;
+    if (!box) return;
+    if (currentLyrics.status !== "ok" || currentLyrics.lines.length > 0) return;
+    if (duration <= 0) return;
+    const scrollable = box.scrollHeight - box.clientHeight;
+    if (scrollable <= 0) return;
+    if (Date.now() - lastManualScrollRef.current < 5000) return;
+    const ratio = Math.min(1, Math.max(0, elapsed / duration));
+    box.scrollTop = Math.round(ratio * scrollable);
+  }, [currentLyrics, elapsed, duration]);
 
   // Load the YouTube IFrame API and create the hidden player.
   useEffect(() => {
@@ -587,6 +672,69 @@ export default function RadioPlayer() {
     return () => window.clearInterval(timer);
   }, [mode, playing, duration]);
 
+  // Media Session — surface now-playing on the lock screen / notification
+  // shade so the radio keeps playing (and stays controllable) when the app
+  // runs in the background, like a native music app.
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    try {
+      ms.metadata = new MediaMetadata({
+        title: track.title,
+        artist: track.artist,
+        album: "Nsangeet — नेपाली संगीतको रेडियो",
+        artwork: [
+          { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+        ],
+      });
+    } catch {
+      // Some WebViews lack MediaMetadata; metadata is best-effort.
+    }
+    try {
+      ms.playbackState = playing ? "playing" : "paused";
+    } catch {
+      // ignore
+    }
+  }, [track.title, track.artist, playing]);
+
+  // Lock-screen transport controls. Re-registered whenever relevant state
+  // changes so the closures always see fresh values.
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    const set = (
+      action: MediaSessionAction,
+      handler: MediaSessionActionHandler | null
+    ) => {
+      try {
+        ms.setActionHandler(action, handler);
+      } catch {
+        // Unsupported action on this platform — ignore.
+      }
+    };
+    set("play", () => {
+      setPlaying(true);
+      playerRef.current?.playVideo();
+    });
+    set("pause", () => {
+      setPlaying(false);
+      playerRef.current?.pauseVideo();
+    });
+    set("previoustrack", () => goTo(indexRef.current - 1));
+    set("nexttrack", () => goTo(indexRef.current + 1));
+    set("seekto", (details) => {
+      if (details.seekTime != null) seekToSeconds(details.seekTime);
+    });
+    return () => {
+      set("play", null);
+      set("pause", null);
+      set("previoustrack", null);
+      set("nexttrack", null);
+      set("seekto", null);
+    };
+  }, [mode, playing, trackKey, seekToSeconds]);
+
   const progress = useMemo(() => {
     if (duration <= 0) return 0;
     return Math.min(100, (elapsed / duration) * 100);
@@ -662,7 +810,13 @@ export default function RadioPlayer() {
         )}
         {currentLyrics.status === "ok" &&
           currentLyrics.lines.length === 0 && (
-            <div className="lyrics-scroll" ref={lyricsBoxRef}>
+            <div
+              className="lyrics-scroll"
+              ref={lyricsBoxRef}
+              onWheel={markManualScroll}
+              onTouchStart={markManualScroll}
+              onPointerDown={markManualScroll}
+            >
               {(currentLyrics.plain || "No lyrics available")
                 .split("\n")
                 .map((l, i) => (
@@ -674,7 +828,13 @@ export default function RadioPlayer() {
           )}
         {currentLyrics.status === "ok" &&
           currentLyrics.lines.length > 0 && (
-            <div className="lyrics-scroll" ref={lyricsBoxRef}>
+            <div
+              className="lyrics-scroll"
+              ref={lyricsBoxRef}
+              onWheel={markManualScroll}
+              onTouchStart={markManualScroll}
+              onPointerDown={markManualScroll}
+            >
               {currentLyrics.lines.map((l, i) => (
                 <div
                   className={`lyrics-line ${
@@ -741,7 +901,7 @@ export default function RadioPlayer() {
             onClick={() => skip(-1)}
             className="glass-btn secondary"
           >
-            <span>⏮</span>
+            <PrevIcon size={20} />
           </button>
           <button
             type="button"
@@ -749,9 +909,7 @@ export default function RadioPlayer() {
             onClick={togglePlay}
             className="glass-btn main"
           >
-            <span className="play-icon" style={{ marginLeft: playing ? 0 : 3 }}>
-              {playing ? "⏸" : "▶"}
-            </span>
+            {playing ? <PauseIcon size={26} /> : <PlayIcon size={28} />}
           </button>
           <button
             type="button"
@@ -759,13 +917,13 @@ export default function RadioPlayer() {
             onClick={() => skip(1)}
             className="glass-btn secondary"
           >
-            <span>⏭</span>
+            <NextIcon size={20} />
           </button>
         </div>
 
         <div className="keyboard-hint">
           {mode === "yt" && !playing
-            ? "बजाउन थाल्नुहोस् ▶ — Nsangeet"
+            ? "बजाउन थाल्नुहोस् — Nsangeet"
             : `${artist.name} बजिरहेको छ — Nsangeet, रेडियो चलिरहेको छ`}
         </div>
       </div>

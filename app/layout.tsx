@@ -21,22 +21,52 @@ const yatraOne = Yatra_One({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nsangeet.app"),
-  title: "Nsangeet — नेपाली संगीतको रेडियो",
+  title: {
+    default: "Nsangeet — नेपाली संगीतको रेडियो",
+    template: "%s — Nsangeet",
+  },
   description:
-    "A cozy Nepali radio streaming Sabin Rai, John Rai, Bartika Eam Rai, Ankita Pun, Sajjan Raj Vaidya, Sushant KC, Samir Shrestha, The Elements and The Tribal Rain.",
+    "Nepali music radio streaming 45 hit songs from 9 artists with karaoke-synced lyrics. Listen to Sabin Rai, John Rai, Bartika Eam Rai, Ankita Pun, Sajjan Raj Vaidya, Sushant KC, Samir Shrestha, The Elements and The Tribal Rain. Created by Anushrut Ghimire.",
+  applicationName: "Nsangeet",
+  authors: [{ name: "Anushrut Ghimire", url: "https://www.anushrut.com.np/" }],
+  creator: "Anushrut Ghimire",
+  publisher: "Anushrut Ghimire",
+  category: "music",
+  keywords: [
+    "Nepali music",
+    "Nepali radio",
+    "Nsangeet",
+    "नेपाली संगीत",
+    "रेडियो",
+    "Nepali songs",
+    "Sabin Rai",
+    "John Rai",
+    "Bartika Eam Rai",
+    "Ankita Pun",
+    "Sajjan Raj Vaidya",
+    "Sushant KC",
+    "Samir Shrestha",
+    "Anushrut Ghimire",
+  ],
   openGraph: {
     title: "Nsangeet — नेपाली संगीतको रेडियो",
     description:
-      "A Nepali music radio — 9 artists, 45 hit songs. Switch artists from the top-right menu.",
+      "Nepali music radio — 9 artists, 45 hit songs with karaoke-synced lyrics. Created by Anushrut Ghimire.",
     type: "website",
+    siteName: "Nsangeet — नेपाली संगीतको रेडियो",
+    url: "https://nsangeet.app",
     images: ["/images/nsangeet-logo.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Nsangeet — नेपाली संगीतको रेडियो",
     description:
-      "A Nepali music radio — 9 artists, 45 hit songs. Switch artists from the top-right menu.",
+      "Nepali music radio — 9 artists, 45 hit songs with karaoke-synced lyrics. Created by Anushrut Ghimire.",
     images: ["/images/nsangeet-logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
   icons: {
     icon: "/icons/icon-192.png",
@@ -50,6 +80,7 @@ export const metadata: Metadata = {
   },
   other: {
     "theme-color": "#241209",
+    author: "Anushrut Ghimire",
   },
 };
 
@@ -64,6 +95,32 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${dmSans.variable} ${fraunces.variable} ${yatraOne.variable}`}
     >
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Nsangeet — नेपाली संगीतको रेडियो",
+              url: "https://nsangeet.app",
+              description:
+                "Nepali music radio streaming 45 hit songs from 9 artists with karaoke-synced lyrics. Created by Anushrut Ghimire.",
+              inLanguage: "ne",
+              author: {
+                "@type": "Person",
+                name: "Anushrut Ghimire",
+                url: "https://www.anushrut.com.np/",
+                description:
+                  "Science student, independent researcher, AI systems and cybersecurity enthusiast from Nepal, and music producer known as Beatable Boxy.",
+              },
+              publisher: {
+                "@type": "Person",
+                name: "Anushrut Ghimire",
+                url: "https://www.anushrut.com.np/",
+              },
+            }),
+          }}
+        />
         {children}
         <ServiceWorkerRegister />
       </body>
