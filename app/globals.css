@@ -508,10 +508,6 @@ body {
   text-align: center;
 }
 
-  z-index: 90;
-  pointer-events: none;
-}
-
 /* ---------- Mobile ---------- */
 
 @media (max-width: 900px) {
