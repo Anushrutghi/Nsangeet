@@ -53,8 +53,6 @@ export default function Home() {
       </div>
 
       <RadioPlayer />
-
-      <div className="radio-credit">♫ रेडियो YouTube बाट बजिरहेको छ — streaming via YouTube</div>
     </div>
   );
 }

@@ -208,11 +208,6 @@ const ARTISTS: Artist[] = [
   },
 ];
 
-const SPOTIFY_URL =
-  "https://open.spotify.com/playlist/37i9dQZF1EIXmVJEYWsbyy";
-const YT_MUSIC_URL =
-  "https://music.youtube.com/playlist?list=RDATl9XfedG9wIDEw";
-
 // Fallback length used when the simulated player is active (no YouTube API).
 const DURATION = 240;
 
@@ -257,25 +252,6 @@ declare global {
 const YT_ENDED = 0;
 const YT_PLAYING = 1;
 const YT_PAUSED = 2;
-
-function PlatformIcon({ kind }: { kind: "spotify" | "youtube" }) {
-  if (kind === "spotify") {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="#1DB954" aria-hidden="true">
-        <path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5Zm4.82 15.15a.87.87 0 0 1-1.2.29c-3.29-2.01-7.43-2.47-12.3-1.35a.87.87 0 1 1-.39-1.69c5.34-1.22 9.91-.7 13.6 1.55.4.24.53.77.29 1.2Zm1.62-3.6a1.09 1.09 0 0 1-1.5.36c-3.76-2.31-9.49-2.98-13.93-1.63a1.09 1.09 0 1 1-.63-2.08c5.08-1.54 11.4-.79 15.72 1.86.51.31.67.98.34 1.49Zm.14-3.75C14.08 6.66 7.27 6.42 3.27 7.63a1.31 1.31 0 0 1-.76-2.5c4.59-1.39 12.24-1.12 16.87 1.63a1.31 1.31 0 0 1-.8 2.54Z" />
-      </svg>
-    );
-  }
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="#FF0000" />
-      <circle cx="12" cy="12" r="4" fill="white" />
-      <path d="M12 5.2a6.8 6.8 0 0 1 5.89 3.4" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M17.89 15.4A6.8 6.8 0 0 1 12 18.8" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M8.11 15.4A6.8 6.8 0 0 1 6.11 12" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export default function RadioPlayer() {
   const [artistId, setArtistId] = useState(ARTISTS[0].id);
@@ -571,35 +547,8 @@ export default function RadioPlayer() {
         }}
       />
 
-      {/* Top-right: platform links + artist switcher */}
+      {/* Top-right: artist switcher */}
       <div className="topbar-cluster">
-        <a
-          href={SPOTIFY_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Spotify playlist"
-          title="Spotify playlist"
-          className="platform-link"
-        >
-          <PlatformIcon kind="spotify" />
-          <span>Spotify</span>
-          <span className="topbar-arrow">↗</span>
-        </a>
-        <a
-          href={YT_MUSIC_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="YouTube Music playlist"
-          title="YouTube Music playlist"
-          className="platform-link"
-        >
-          <PlatformIcon kind="youtube" />
-          <span>YouTube Music</span>
-          <span className="topbar-arrow">↗</span>
-        </a>
-
-        <span className="topbar-divider" aria-hidden="true" />
-
         <button
           type="button"
           aria-label="Choose artist"

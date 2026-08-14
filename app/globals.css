@@ -128,44 +128,10 @@ body {
   z-index: 20;
 }
 
-.platform-link {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 9px;
-  border-radius: 9px;
-  color: rgba(255, 255, 255, 0.88);
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-  background: rgba(255, 255, 255, 0.06);
-  transition:
-    background 0.18s ease,
-    transform 0.18s ease;
-}
-
-.platform-link:hover {
-  background: rgba(255, 255, 255, 0.14);
-  transform: translateY(-1px);
-}
-
-.platform-link:focus-visible,
 .menu-btn:focus-visible,
 .artist-menu-item:focus-visible {
   outline: 2px solid rgba(255, 248, 235, 0.8);
   outline-offset: 2px;
-}
-
-.topbar-arrow {
-  font-size: 12px;
-  opacity: 0.65;
-}
-
-.topbar-divider {
-  width: 1px;
-  height: 22px;
-  background: rgba(255, 255, 255, 0.18);
 }
 
 .menu-btn {
@@ -542,16 +508,6 @@ body {
   text-align: center;
 }
 
-.radio-credit {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 6px;
-  font-size: 10px;
-  letter-spacing: 0.4px;
-  color: rgba(255, 248, 235, 0.42);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  white-space: nowrap;
   z-index: 90;
   pointer-events: none;
 }
@@ -587,17 +543,6 @@ body {
     padding: 5px;
     border-radius: 12px;
   }
-  .platform-link {
-    padding: 6px 7px;
-    font-size: 9px;
-  }
-  .platform-link svg {
-    width: 14px;
-    height: 14px;
-  }
-  .topbar-arrow {
-    display: none;
-  }
   .menu-btn {
     width: 32px;
     height: 32px;
@@ -615,9 +560,5 @@ body {
   }
   .song-title {
     font-size: 17px;
-  }
-  .radio-credit {
-    bottom: 3px;
-    font-size: 9px;
   }
 }
