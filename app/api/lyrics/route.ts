@@ -2,6 +2,68 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+// Stable LRCLIB IDs for every track that exists in their database.
+// Fetching by ID is a single deterministic request — no flaky search,
+// no rate-limit pileups when songs change quickly.
+const LRCLIB_IDS: Record<string, number> = {
+  "sabinrai|komaltyotimro": 35465478,
+  "sabinraithepharaoh|timinaihau": 6587858,
+  "sabinraithepharaoh|baimaani": 8099675,
+  "johnrai|sadhana": 9420659,
+  "johnrai|hawajastai": 10595509,
+  "johnrai|farkannahola": 35336433,
+  "johnrai|badalsari": 25693646,
+  "bartikaeamrai|khai": 9097605,
+  "bartikaeamrai|najeek": 9420664,
+  "bartikaeamrai|nidarikonimti": 28150161,
+  "bartikaeamrai|ghar": 3077510,
+  "bartikaeamrai|umer": 3077651,
+  "ankitapun|maili": 11595677,
+  "ankitapun|mayatayestaiho": 27961417,
+  "ankitapun|puranobaasna": 35552735,
+  "ankitapun|shizenro": 34674968,
+  "sajjanrajvaidya|sastomutu": 7836693,
+  "sajjanrajvaidya|hataarindaibataasindai": 3077516,
+  "sajjanrajvaidya|sunakaanchi": 7526743,
+  "sajjanrajvaidya|dhairya": 7423139,
+  "sajjanrajvaidya|naganyamaya": 4920054,
+  "sushantkcftindrakalarai|bardali": 14481407,
+  "sushantkc|sarangi": 12305094,
+  "sushantkc|risaunebhaye": 36439379,
+  "sushantkcftjhumalimbu|parkhana": 15826970,
+  "sushantkc|sathi": 7064034,
+  "samirshrestha|thamanahaat": 34507974,
+  "samirshrestha|herana": 12389676,
+  "samirshrestha|bujhideu": 7716373,
+  "samirshrestha|timibhayeakafi": 34127138,
+  "samirshrestha|timiley": 9898863,
+  "theelements|birsineyhauki": 34562999,
+  "theelements|putali": 35813116,
+  "theelements|sapanakomayalu": 35251162,
+  "theelements|oiliyekophool": 6981813,
+  "theelements|tesailehideyma": 4833074,
+  "thetribalrain|bhanai": 12311867,
+  "thetribalrain|chinta": 12377131,
+  "thetribalrain|jiununaihola": 35144057,
+  "thetribalrain|laijaumalai": 23348739,
+};
+
+// Simple in-memory cache (per server process) so repeat plays are
+// instant and never touch LRCLIB again.
+const cache = new Map<string, { data: Record<string, unknown>; expires: number }>();
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+
+function cached(key: string) {
+  const hit = cache.get(key);
+  if (hit && hit.expires > Date.now()) return hit.data;
+  if (hit) cache.delete(key);
+  return null;
+}
+
+function remember(key: string, data: Record<string, unknown>) {
+  cache.set(key, { data, expires: Date.now() + CACHE_TTL });
+}
+
 // Some tracks aren't in LRCLIB's database (or only under a misspelled
 // title). Keep a small curated fallback so every song on the radio shows
 // lyrics instead of "not found". Plain text — the player renders these
@@ -280,10 +342,44 @@ export async function GET(request: NextRequest) {
 
   const artistNorm = normalize(artist);
   const trackNorm = normalize(track);
-  // LRCLIB sometimes indexes a title under a slightly different spelling
-  // ("Laijau Malai" -> "Laijaw Malai"); try the alias as an extra query.
-  // LRCLIB's search is case-sensitive: "Tribal Rain Laijaw Malai" finds
-  // the track but a lowercase alias doesn't. Title-case every query term.
+  const key = `${artistNorm}|${trackNorm}`;
+
+  // Fast path 1: already resolved this track recently.
+  const fromCache = cached(key);
+  if (fromCache) {
+    return NextResponse.json(fromCache);
+  }
+
+  // Fast path 2: known LRCLIB ID — one deterministic request.
+  const knownId = LRCLIB_IDS[key];
+  if (knownId) {
+    try {
+      const res = await fetch(`https://lrclib.net/api/get/${knownId}`, {
+        headers: {
+          "User-Agent": "NsangeetRadio/1.0 (contact: nsangeet.app)",
+        },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const item = (await res.json()) as LrcLibItem;
+        if (item.plainLyrics || item.syncedLyrics) {
+          const data = {
+            title: item.trackName,
+            artist: item.artistName,
+            syncedLyrics: item.syncedLyrics,
+            plainLyrics: item.plainLyrics,
+          };
+          remember(key, data);
+          return NextResponse.json(data);
+        }
+      }
+    } catch {
+      // fall through to search
+    }
+  }
+
+  // Slow path: fuzzy search with artist variants + aliases. LRCLIB's
+  // search is case-sensitive, so title-case query terms.
   const titleCase = (s: string) =>
     s
       .split(/\s+/)
@@ -341,20 +437,24 @@ export async function GET(request: NextRequest) {
       .map((k) => FALLBACK_LYRICS[k])
       .find((v) => !!v);
     if (fallback) {
-      return NextResponse.json({
+      const data = {
         title: track,
         artist,
         syncedLyrics: null,
         plainLyrics: fallback,
-      });
+      };
+      remember(key, data);
+      return NextResponse.json(data);
     }
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  return NextResponse.json({
+  const data = {
     title: best.item.trackName,
     artist: best.item.artistName,
     syncedLyrics: best.item.syncedLyrics,
     plainLyrics: best.item.plainLyrics,
-  });
+  };
+  remember(key, data);
+  return NextResponse.json(data);
 }
