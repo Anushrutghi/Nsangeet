@@ -36,20 +36,18 @@ export default function Home() {
           }}
         />
 
-        <div className="hero-brand">
-          <div className="hero-logo">
-            <Image
-              src="/images/nsangeet-logo.png"
-              alt="Nsangeet logo"
-              width={300}
-              height={226}
-              priority
-              style={{ width: "100%", height: "auto", display: "block" }}
-            />
-          </div>
-          <div className="hero-title">Nsangeet</div>
-          <div className="hero-tagline">
-            नेपाली संगीतको रेडियो — ९ कलाकार, ४५ गीत
+        <div className="brand-header">
+          <Image
+            src="/images/nsangeet-logo.png"
+            alt="Nsangeet logo"
+            width={64}
+            height={48}
+            priority
+            className="brand-logo"
+          />
+          <div className="brand-text">
+            <div className="brand-name">Nsangeet</div>
+            <div className="brand-tagline">नेपाली संगीतको रेडियो</div>
           </div>
         </div>
       </div>
