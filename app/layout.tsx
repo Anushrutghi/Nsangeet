@@ -19,9 +19,23 @@ const yatraOne = Yatra_One({
 });
 
 export const metadata: Metadata = {
-  title: "Rai ko Chiya Pasal",
+  title: "Rai ko Chiya Pasal — राईको चिया पसल",
   description:
     "A cozy Nepali roadside tea shop, and an old radio playing Sabin Rai, John Rai and Bartika Eam Rai.",
+  openGraph: {
+    title: "Rai ko Chiya Pasal — राईको चिया पसल",
+    description:
+      "A cozy Nepali roadside tea shop, and an old radio playing Sabin Rai, John Rai and Bartika Eam Rai.",
+    type: "website",
+    images: ["/images/chiya-pasal.jpg"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rai ko Chiya Pasal — राईको चिया पसल",
+    description:
+      "A cozy Nepali roadside tea shop, and an old radio playing Sabin Rai, John Rai and Bartika Eam Rai.",
+    images: ["/images/chiya-pasal.jpg"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

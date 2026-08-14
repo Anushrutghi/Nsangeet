@@ -137,6 +137,7 @@ export default function Home() {
               letterSpacing: 0.3,
               background: "rgba(255,255,255,0.06)",
             }}
+            className="platform-link"
           >
             <PlatformIcon kind="spotify" />
             <span>Spotify</span>
@@ -161,6 +162,7 @@ export default function Home() {
               letterSpacing: 0.3,
               background: "rgba(255,255,255,0.06)",
             }}
+            className="platform-link"
           >
             <PlatformIcon kind="youtube" />
             <span>YouTube Music</span>
@@ -170,6 +172,8 @@ export default function Home() {
       </div>
 
       <RadioPlayer />
+
+      <div className="radio-credit">♫ रेडियो YouTube बाट बजिरहेको छ — streaming via YouTube</div>
     </div>
   );
 }
