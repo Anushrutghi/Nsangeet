@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces, Yatra_One } from "next/font/google";
+import ServiceWorkerRegister from "./components/ServiceWorkerRegister";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -40,6 +41,15 @@ export const metadata: Metadata = {
     icon: "/images/nsangeet-logo.png",
     apple: "/apple-touch-icon.png",
   },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Nsangeet",
+  },
+  other: {
+    "theme-color": "#241209",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -48,7 +58,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ne"
       className={`${dmSans.variable} ${fraunces.variable} ${yatraOne.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorkerRegister />
+      </body>
     </html>
   );
 }
