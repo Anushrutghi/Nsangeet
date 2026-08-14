@@ -215,6 +215,49 @@ const ARTISTS: Artist[] = [
 // Fallback length used when the simulated player is active (no YouTube API).
 const DURATION = 240;
 
+// localStorage key + loader for resuming playback where it stopped.
+// Works identically in the browser and in the APK's WebView.
+const RESUME_KEY = "nsangeet-resume-v1";
+
+function loadSavedResume(): {
+  artistId: string;
+  index: number;
+  elapsed: number;
+} | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(RESUME_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as {
+      artistId?: unknown;
+      index?: unknown;
+      elapsed?: unknown;
+      savedAt?: unknown;
+    };
+    if (typeof d !== "object" || d === null) return null;
+    if (!ARTISTS.some((a) => a.id === d.artistId)) return null;
+    // Don't resume from stale sessions (older than a week).
+    if (
+      typeof d.savedAt === "number" &&
+      Date.now() - d.savedAt > 7 * 24 * 60 * 60 * 1000
+    )
+      return null;
+    const index =
+      typeof d.index === "number" && Number.isInteger(d.index) && d.index >= 0
+        ? d.index
+        : 0;
+    const elapsed =
+      typeof d.elapsed === "number" &&
+      Number.isFinite(d.elapsed) &&
+      d.elapsed >= 0
+        ? d.elapsed
+        : 0;
+    return { artistId: d.artistId as string, index, elapsed };
+  } catch {
+    return null;
+  }
+}
+
 function formatTime(s: number) {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
@@ -321,6 +364,25 @@ export default function RadioPlayer() {
   const indexRef = useRef(0);
   const tracksRef = useRef<Track[]>(ARTISTS[0].tracks);
   const errorCountRef = useRef(0);
+
+  // Resume-playback bookkeeping. elapsedRef/artistIdRef mirror state so the
+  // save timer can persist them without re-registering; restoreRef carries
+  // the saved position to the YouTube player's onReady.
+  const restoreRef = useRef<{
+    tracks: Track[];
+    index: number;
+    elapsed: number;
+  } | null>(null);
+  const elapsedRef = useRef(0);
+  const artistIdRef = useRef(artistId);
+
+  // Keep refs in sync with state after every render so the save timer can
+  // persist the latest position without re-registering (refs must not be
+  // touched during render).
+  useEffect(() => {
+    elapsedRef.current = elapsed;
+    artistIdRef.current = artistId;
+  });
 
   const artist = ARTISTS.find((a) => a.id === artistId) ?? ARTISTS[0];
   const tracks = artist.tracks;
@@ -539,6 +601,39 @@ export default function RadioPlayer() {
     box.scrollTop = Math.round(ratio * scrollable);
   }, [currentLyrics, elapsed, duration]);
 
+  // Resume where the listener left off (browser and APK WebView). Runs a
+  // tick after mount so it never fights hydration; the YouTube player
+  // (created below) reads the updated refs when it becomes ready, so the
+  // right track and position load from the very start.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const saved = loadSavedResume();
+      if (!saved) return;
+      const artist = ARTISTS.find((a) => a.id === saved.artistId) ?? ARTISTS[0];
+      const index = Math.min(saved.index, artist.tracks.length - 1);
+      tracksRef.current = artist.tracks;
+      indexRef.current = index;
+      artistIdRef.current = artist.id;
+      restoreRef.current = {
+        tracks: artist.tracks,
+        index,
+        elapsed: saved.elapsed,
+      };
+      setArtistId(artist.id);
+      setIndex(index);
+      setElapsed(saved.elapsed);
+      // Player already up (e.g. an unusually slow restore): jump straight
+      // to the saved track and position.
+      if (playerRef.current) {
+        playerRef.current.loadVideoById(artist.tracks[index].videoId);
+        playerRef.current.seekTo(saved.elapsed, true);
+        playerRef.current.playVideo();
+        setMode("yt");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   // Load the YouTube IFrame API and create the hidden player.
   useEffect(() => {
     let cancelled = false;
@@ -551,7 +646,7 @@ export default function RadioPlayer() {
       if (cancelled || playerRef.current || !window.YT?.Player) return;
       try {
         new window.YT.Player("raichiya-yt-player", {
-          videoId: ARTISTS[0].tracks[0].videoId,
+          videoId: tracksRef.current[indexRef.current].videoId,
           playerVars: {
             autoplay: 1,
             playsinline: 1,
@@ -567,6 +662,11 @@ export default function RadioPlayer() {
               errorCountRef.current = 0;
               setMode("yt");
               setPlaying(false); // autoplay with sound is usually blocked; wait for state
+              // Resume from the saved position when one exists.
+              const resume = restoreRef.current;
+              if (resume) {
+                e.target.seekTo(resume.elapsed, true);
+              }
               e.target.playVideo();
             },
             onStateChange: (e) => {
@@ -671,6 +771,40 @@ export default function RadioPlayer() {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [mode, playing, duration]);
+
+  // Persist the playback position so the radio resumes where it stopped.
+  // Saves every few seconds and on backgrounding/closing (covers the APK
+  // WebView too — localStorage lives in the WebView's data directory).
+  useEffect(() => {
+    const save = () => {
+      try {
+        const artist =
+          ARTISTS.find((a) => a.id === artistIdRef.current) ?? ARTISTS[0];
+        window.localStorage.setItem(
+          RESUME_KEY,
+          JSON.stringify({
+            artistId: artist.id,
+            index: indexRef.current,
+            elapsed: Math.round(elapsedRef.current * 10) / 10,
+            savedAt: Date.now(),
+          })
+        );
+      } catch {
+        // Storage unavailable (private mode / disabled) — resume stays off.
+      }
+    };
+    const timer = window.setInterval(save, 4000);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", save);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", save);
+    };
+  }, []);
 
   // Media Session — surface now-playing on the lock screen / notification
   // shade so the radio keeps playing (and stays controllable) when the app
