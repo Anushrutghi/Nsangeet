@@ -609,7 +609,11 @@ export default function RadioPlayer() {
               {(currentLyrics.plain || "No lyrics available")
                 .split("\n")
                 .map((l, i) => (
-                  <div className="lyrics-line" key={i}>
+                  <div
+                    className="lyrics-line"
+                    key={i}
+                    style={{ animationDelay: `${Math.min(i * 45, 500)}ms` }}
+                  >
                     {l}
                   </div>
                 ))}
@@ -625,6 +629,7 @@ export default function RadioPlayer() {
                   }`}
                   key={i}
                   ref={i === activeLyricIndex ? activeLineRef : undefined}
+                  style={{ animationDelay: `${Math.min(i * 45, 500)}ms` }}
                 >
                   {l.text}
                 </div>
