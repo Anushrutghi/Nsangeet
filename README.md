@@ -31,4 +31,3 @@ the way.
 
 ---
 
-Built with Next.js · Deploys on Vercel
