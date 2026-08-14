@@ -2,6 +2,165 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+// Some tracks aren't in LRCLIB's database (or only under a misspelled
+// title). Keep a small curated fallback so every song on the radio shows
+// lyrics instead of "not found". Plain text — the player renders these
+// without the karaoke highlight.
+const FALLBACK_LYRICS: Record<string, string> = {
+  "sabinrai|masansarjitne": `म संसार जित्ने आठ गर्दै छु
+मात्र तिमि मेरो साथ् बसिदेउ
+भबिष्य ले गाउने गीत म रच्दै छु
+मात्र तिमि सुर मा ताल मिलाई देउ
+यहि हो आर्थ रच्नु को
+इतिहास मा अमर रहोस
+तिम्रो मेरो कहानी सधै सधै
+
+जब हिड्दा हिड्दा थाक्छु म कहिले कहिँ
+त्यति बेला मेरो आड बनि देउ
+जिन्दगि को मोडमा सोच्न सकिन भने
+तिम्रो मिठो विचार मलाई देउ
+यहि हो अर्थ भन्नु को
+सपना ठुलो छैन
+बिलौना गर्न नपरोस
+जिन्दगीमा
+
+सुनौलो हाम्रो भबिष्य
+साकार हुन्छ मलाई भरोसा छ
+म हरपल तिम्रो रक्षा गर्ने छु
+मात्र तिमि आत्मबल बनिदेउ
+
+म संसार जित्ने आठ गर्दै छु
+मात्र तिमि मेरो साथ् बसिदेउ`,
+  "sabinrai|samjhanaharulai": `सम्झना हरुलाई अंगाल्दै यो जीवन बिताउँछु
+के गर्नु भाग्य यस्तै थियो भनेर बुझाउँछु
+म रोए पनि तिमी कहिले नरुनु
+उसको अंगालोमा बाँधी हरपल हाँसी रहनु
+यस्तै भयो मैले माया लाउन जानिन
+मेरो सारा खुसी तिमीलाई दिन कहिले सकिन
+त्यसैले होला मै रुनु पर्यो अन्त्यमा
+
+ठिकै हो तिम्रा हरेक इच्छ्या पुरा गर्न सक्दिन थे
+तिम्ले माग्यौ भने चन्द्रमा सामु ल्याउन सक्दिन थे
+सेतो कफन ओढी दिदा म, तिमी बेहुली वै दिनु
+मेरो लास बोकी लादा तिमी डोली चढिदिनु
+यो जनममा तिमी मेरो होइनौ रहेछ
+खुसी थिए हाँसी दिदा हाँसो मेरो होइन रहेछ
+त्यसैले होला मै रुनु पर्यो अन्त्यमा
+
+गएर नजिक माया दिन सकिन
+छएर पनि तिमीलाई भुल्न सकिन
+मन रोए पनि यो देखाउन सकिन
+नयन रसे पनि आँशु झार्न सकिन
+त्यसैले होला मै रुनु पर्यो अन्त्यमा`,
+  "johnrai|kochara": `को छ र तिमीलाई
+को छ र तिमीलाई आजा बुझिदिने
+तिम्रा मनका
+तिम्रा मनका कुरा सबै सोधिदिने
+
+आकाश छुने रहर
+तिम्रो पनि कति होला
+एक्लै बस्दा आँशु
+नयना बाट झर्दा
+पीडा हुन्छ
+
+तिम्रो मन दुख्यो होला
+दुखाउने लाई के थाहा
+कति सपना बग्य होला
+नदेख्ने लाई के थाहा
+
+को छ र तिमीलाई
+को छ र तिमीलाई आजा बुझिदिने
+तिम्रा मनका
+तिम्रा मनका कुरा सबै सोधिदिने`,
+  "johnrai|mayagarnula": `माया गर्नु ल
+माया गर्नु ल
+कति बाँच्छु खै
+माया गर्नु ल
+
+सँगै राख्नु ल
+हात नछोडेर
+जति बाँचे नि
+माया गर्नु ल
+
+टाढा गएनि मलाई
+नबिर्सिदिनु ल
+त्यो मन भरी को माया
+दिएरै जानु ल
+
+मोहनी लायौ आँखैले
+जानी नजानी फसे
+टाढा गएनि मलाई
+नबिर्सिदिनु ल
+त्यो मन भरी को माया
+दिएरै जानु ल
+
+माया गर्नु ल
+माया गर्नु ल
+जति बाँचे नि
+माया गर्नु ल`,
+  "ankitapun|putaliaau": `चिसो चिसो मौसममा
+तिम्रो न्यानो अंगालो
+मायाको त्यो गलबन्दीले
+बाँधी राख है
+सिरी सिरी हावामा
+मायालुका गीत हरू
+सधै भरी यसरी नै
+बगी रहोस है
+
+तिमी आऊ… पुतली आऊ…
+मलाई अंगाल… तिम्रो त्यो रंगी विरंगी
+पखेटा मा…
+
+सानो सानो बंगेरी
+नाच्दै आउँछन तिमी तिरै
+कालो कालो केशमा
+फुला हरू सजाउँछन
+रंगी चंगी फरिया
+गोलो गोलो घुमाउछौ
+कालो कालो आँखाहरू
+वारी पारी दुलाउछौ
+
+तिमी आऊ… पुतली आऊ…
+मलाई अंगाल… तिम्रो त्यो रंगी विरंगी
+पखेटा मा…`,
+  "thetribalrain|narisauna": `नरिसाउना तिमी बिना मेरो जीवन शुन्य छ
+नरिसाउना तिमी नै हौ मेरो एउटै सपना
+तिम्रै लागि मैले संसार लाई भुलि दिए
+तिम्रो लागि म आफु जिउन भुलि दिए
+
+आखा मा आँशु तिम्रो साउदैन
+खै मैले त माया लाउनु जानिन रैछु
+हामीले सँगै बिताएका दिन हरु याद हरु
+एउटा सपना सम्झी न भुलि दिनु
+
+यो माया भने के हो?
+तिमी बाट थाहा पाए मैले
+म देखी टाढा नजाऊ
+बिर्सी सके आफैलाई तिम्रो लागि
+तिम्रो लागि
+
+नरिसाउना अब निकाली देउ यो एक्लोपन देखी
+सुखमा हाँसी दुखमा रुई दिउला तिम्रो लागि
+नरिसाउना न तिमीलाई मेरो याद आउने छ
+मन दुखाए पनि यो मन नतोडिदेउ
+
+आखा मा आँशु तिम्रो साउदैन
+खै मैले त माया लाउनु जानिन रैछु
+हामीले सँगै बिताएका दिन हरु याद हरु
+एउटा सपना सम्झी न भुलि दिनु
+
+तर सबै ठिकै लाग्छ जब तिमी
+भन्ने गर्छौ यस्तै हुँदो रैछ माया भने
+तर सबै ठिकै लाग्छ जब तिमी
+भन्ने गर्छौ यस्तै हुँदो रैछ माया भने`,
+};
+
+// LRCLIB stores some titles under a different spelling than the app uses.
+const TRACK_ALIASES: Record<string, string> = {
+  // LRCLIB indexes this title with a typo; keys are normalized.
+  laijaumalai: "laijaw malai",
+};
+
 type LrcLibItem = {
   id: number;
   trackName: string;
@@ -17,6 +176,96 @@ function normalize(s: string) {
   return s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
 }
 
+/** Artist search variants — "The Tribal Rain" also matches "Tribal Rain". */
+function artistVariants(artist: string): string[] {
+  const variants = new Set<string>([artist]);
+  const stripped = artist.replace(/^(the|a)\s+/i, "").trim();
+  if (stripped && stripped !== artist) variants.add(stripped);
+  return [...variants];
+}
+
+/**
+ * Levenshtein distance — lets "Laijau Malai" match LRCLIB's
+ * "Laijaw Malai" typo.
+ */
+function editDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = new Array<number>(n + 1);
+  let curr = new Array<number>(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[n];
+}
+
+/**
+ * How well a candidate matches our track. Returns a score; the best
+ * candidate wins even when names differ slightly (typos in LRCLIB data
+ * like "Laijaw Malai" vs "Laijau Malai").
+ */
+function matchScore(
+  item: LrcLibItem,
+  artistNorm: string,
+  trackNorm: string
+): number {
+  const a = normalize(item.artistName ?? "");
+  const t = normalize(item.trackName ?? "");
+  let s = 0;
+  if (a === artistNorm) s += 6;
+  else if (a.includes(artistNorm) || artistNorm.includes(a)) s += 4;
+  else if (a.includes(artistNorm.slice(0, Math.max(4, artistNorm.length - 2)))) s += 2;
+
+  if (t === trackNorm) s += 6;
+  else if (t.includes(trackNorm) || trackNorm.includes(t)) s += 4;
+  else {
+    // fuzzy: share of the shorter name that appears in the longer one
+    const short = t.length <= trackNorm.length ? t : trackNorm;
+    const long = t.length <= trackNorm.length ? trackNorm : t;
+    if (short.length >= 4 && long.includes(short)) s += 3;
+    // edit distance: catch typos like laijaumalai vs laijawmalai
+    const dist = editDistance(t, trackNorm);
+    const maxLen = Math.max(t.length, trackNorm.length);
+    if (maxLen >= 6 && dist <= Math.max(1, Math.floor(maxLen * 0.2))) s += 2;
+  }
+  if (item.instrumental) s -= 5;
+  if (item.syncedLyrics) s += 3;
+  else if (item.plainLyrics) s += 1;
+  return s;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function searchLrcLib(query: string): Promise<LrcLibItem[]> {
+  // LRCLIB rate-limits aggressively (about 1 req/s per IP); retry 429s
+  // with a growing backoff and pace queries to stay under the limit.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (attempt > 0) await sleep(700 * attempt + 300);
+    const res = await fetch(
+      `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          "User-Agent": "NsangeetRadio/1.0 (contact: nsangeet.app)",
+        },
+        cache: "no-store",
+      }
+    );
+    if (res.status === 429) continue;
+    if (!res.ok) throw new Error(`lyrics service error ${res.status}`);
+    return (await res.json()) as LrcLibItem[];
+  }
+  return [];
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const artist = searchParams.get("artist")?.trim() ?? "";
@@ -29,59 +278,83 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const query = encodeURIComponent(`${artist} ${track}`);
-  const res = await fetch(`https://lrclib.net/api/search?q=${query}`, {
-    headers: {
-      "User-Agent": "NsangeetRadio/1.0 (https://localhost:3000)",
-    },
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: `lyrics service error ${res.status}` },
-      { status: 502 }
-    );
-  }
-
-  let results: LrcLibItem[];
-  try {
-    results = (await res.json()) as LrcLibItem[];
-  } catch {
-    return NextResponse.json({ error: "bad lyrics response" }, { status: 502 });
-  }
-
   const artistNorm = normalize(artist);
   const trackNorm = normalize(track);
+  // LRCLIB sometimes indexes a title under a slightly different spelling
+  // ("Laijau Malai" -> "Laijaw Malai"); try the alias as an extra query.
+  // LRCLIB's search is case-sensitive: "Tribal Rain Laijaw Malai" finds
+  // the track but a lowercase alias doesn't. Title-case every query term.
+  const titleCase = (s: string) =>
+    s
+      .split(/\s+/)
+      .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+      .join(" ");
+  const alias = TRACK_ALIASES[trackNorm];
+  const aliasTitle = alias ? titleCase(alias) : null;
+  const trackTitle = titleCase(track);
+  const queries = [
+    ...artistVariants(artist).map((a) => `${a} ${track}`),
+    ...(aliasTitle && aliasTitle.toLowerCase() !== trackTitle.toLowerCase()
+      ? artistVariants(artist).map((a) => `${a} ${aliasTitle}`)
+      : []),
+    track,
+  ];
 
-  const score = (item: LrcLibItem) => {
-    let s = 0;
-    const a = normalize(item.artistName ?? "");
-    const t = normalize(item.trackName ?? "");
-    if (a.includes(artistNorm) || artistNorm.includes(a)) s += 2;
-    if (t.includes(trackNorm) || trackNorm.includes(t)) s += 2;
-    if (item.instrumental) s -= 3;
-    if (item.plainLyrics) s += 1;
-    if (item.syncedLyrics) s += 2;
-    return s;
-  };
+  let best: { item: LrcLibItem; score: number } | null = null;
+  for (const q of queries) {
+    let results: LrcLibItem[];
+    try {
+      results = await searchLrcLib(q);
+    } catch {
+      continue;
+    }
+    await sleep(450);
+    for (const item of results) {
+      if (!item.plainLyrics && !item.syncedLyrics) continue;
+      const score = matchScore(item, artistNorm, trackNorm);
+      // Require a real artist match before accepting (protects against
+      // unrelated tracks sharing a word, e.g. "Chinta"). Falls back to
+      // edit distance for DB-side typos.
+      const a = normalize(item.artistName ?? "");
+      const artistOk =
+        a === artistNorm ||
+        a.includes(artistNorm) ||
+        artistNorm.includes(a) ||
+        a.includes(artistNorm.slice(0, Math.max(4, artistNorm.length - 2))) ||
+        (Math.max(a.length, artistNorm.length) >= 5 &&
+          editDistance(a, artistNorm) <= Math.max(1, Math.floor(Math.max(a.length, artistNorm.length) * 0.25)));
+      if (!artistOk) continue;
+      if (!best || score > best.score) best = { item, score };
+    }
+  }
 
-  const ranked = [...results].sort((x, y) => score(y) - score(x));
-  const best = ranked.find(
-    (r) =>
-      r.plainLyrics &&
-      (normalize(r.artistName ?? "").includes(artistNorm) ||
-        artistNorm.includes(normalize(r.artistName ?? "")))
-  );
-
-  if (!best) {
+  if (!best || best.score < 6) {
+    // Curated fallback for songs LRCLIB doesn't have at all. The app's
+    // artist strings vary ("Sabin Rai & The Elektrix" vs "Sabin Rai"),
+    // so try the full artist plus its base form (part before &/ft).
+    const baseArtist = normalize(artist.split(/&|ft\.?/i)[0] ?? artist);
+    const candidates = [
+      `${artistNorm}|${trackNorm}`,
+      `${baseArtist}|${trackNorm}`,
+    ];
+    const fallback = candidates
+      .map((k) => FALLBACK_LYRICS[k])
+      .find((v) => !!v);
+    if (fallback) {
+      return NextResponse.json({
+        title: track,
+        artist,
+        syncedLyrics: null,
+        plainLyrics: fallback,
+      });
+    }
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
   return NextResponse.json({
-    title: best.trackName,
-    artist: best.artistName,
-    syncedLyrics: best.syncedLyrics,
-    plainLyrics: best.plainLyrics,
+    title: best.item.trackName,
+    artist: best.item.artistName,
+    syncedLyrics: best.item.syncedLyrics,
+    plainLyrics: best.item.plainLyrics,
   });
 }
