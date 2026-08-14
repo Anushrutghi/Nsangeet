@@ -307,14 +307,18 @@ export default function RadioPlayer() {
     setPlaying((p) => !p);
   };
 
-  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+  const seekToClientX = (clientX: number, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     const target = ratio * duration;
     if (mode === "yt" && playerRef.current) {
       playerRef.current.seekTo(target, true);
     }
     setElapsed(target);
+  };
+
+  const seek = (e: React.PointerEvent<HTMLDivElement>) => {
+    seekToClientX(e.clientX, e.currentTarget);
   };
 
   const switchArtist = (id: string) => {
@@ -655,7 +659,10 @@ export default function RadioPlayer() {
           aria-valuemin={0}
           aria-valuemax={Math.round(duration)}
           aria-valuenow={Math.round(elapsed)}
-          onClick={seek}
+          onPointerDown={seek}
+          onPointerMove={(e) => {
+            if (e.buttons > 0) seek(e);
+          }}
         >
           <div
             className="glass-progress-fill"
