@@ -21,11 +21,11 @@ const yatraOne = Yatra_One({
 export const metadata: Metadata = {
   title: "Rai ko Chiya Pasal — राईको चिया पसल",
   description:
-    "A cozy Nepali roadside tea shop, and an old radio playing Sabin Rai, John Rai and Bartika Eam Rai.",
+    "A cozy Nepali roadside tea shop, and an old radio playing Sabin Rai, John Rai, Bartika Eam Rai, Ankita Pun, Sajjan Raj Vaidya, Sushant KC, Samir Shrestha, The Elements and The Tribal Rain.",
   openGraph: {
     title: "Rai ko Chiya Pasal — राईको चिया पसल",
     description:
-      "A cozy Nepali roadside tea shop, and an old radio playing Sabin Rai, John Rai and Bartika Eam Rai.",
+      "A cozy Nepali roadside tea shop, and an old radio playing 9 Nepali artists — switch them from the top-right menu.",
     type: "website",
     images: ["/images/chiya-pasal.jpg"],
   },
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Rai ko Chiya Pasal — राईको चिया पसल",
     description:
-      "A cozy Nepali roadside tea shop, and an old radio playing Sabin Rai, John Rai and Bartika Eam Rai.",
+      "A cozy Nepali roadside tea shop, and an old radio playing 9 Nepali artists — switch them from the top-right menu.",
     images: ["/images/chiya-pasal.jpg"],
   },
 };
