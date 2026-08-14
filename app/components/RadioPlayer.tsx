@@ -682,19 +682,19 @@ export default function RadioPlayer() {
 
       {/* Bottom: glass radio player */}
       <div className="glass-player">
-        <div className="player-top">
+        <div className="player-top" suppressHydrationWarning>
           <span className={`status-dot ${playing ? "active" : ""}`} />
           {playing ? "ON AIR" : "PAUSED"}
           <span>RADIO</span>
-          <span>माछापुच्छ्रे FM</span>
+          <span>अनुश्रुत FM</span>
         </div>
 
-        <div className="song-info" key={index}>
+        <div className="song-info" key={index} suppressHydrationWarning>
           <div className={`song-title ${fade ? "song-fade" : ""}`}>{track.title}</div>
           <div className="song-artist">{track.artist}</div>
         </div>
 
-        <div className="player-times">
+        <div className="player-times" suppressHydrationWarning>
           <span>{formatTime(elapsed)}</span>
           <span>{formatTime(duration)}</span>
         </div>
