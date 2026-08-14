@@ -38,6 +38,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/images/nsangeet-logo.png",
+    apple: "/apple-touch-icon.png",
   },
 };
 
