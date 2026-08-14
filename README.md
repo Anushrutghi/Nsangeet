@@ -23,7 +23,9 @@ with synced karaoke lyrics that follow the singer in real time.
 Sabin Rai · John Rai · Bartika Eam Rai · Ankita Pun · Sajjan Raj Vaidya ·
 Sushant KC · Samir Shrestha · The Elements · The Tribal Rain
 
-## Start listening
+## Start listening. 
+
+**nsangeet.vercel.app**
 
 Open the site, choose an artist, and press play — that's it. The station
 takes care of the rest, moving from song to song with synced lyrics along
