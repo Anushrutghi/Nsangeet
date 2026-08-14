@@ -30,6 +30,110 @@ body {
   overflow: hidden;
 }
 
+/* ---------- Animated cartoon background ---------- */
+
+.bg-stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Slow Ken Burns drift — cinematic, emotional, like a music video. */
+.bg-image {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  filter: url(#cartoonFilter);
+  animation: kenburns 42s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes kenburns {
+  from {
+    transform: scale(1.02) translate(0%, 0%);
+  }
+  to {
+    transform: scale(1.14) translate(-2.5%, -1.5%);
+  }
+}
+
+/* Warm grade that breathes like a heartbeat. */
+.bg-grade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 55%,
+    rgba(255, 175, 95, 0.14),
+    rgba(30, 8, 28, 0.28) 80%
+  );
+  animation: gradeBreathe 7s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes gradeBreathe {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Soft vignette to pull focus to the center. */
+.bg-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 52%,
+    rgba(12, 5, 18, 0.42) 100%
+  );
+  pointer-events: none;
+}
+
+/* Drifting embers — dreamy floating light like a sad song. */
+.particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  bottom: -14px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 226, 168, 0.95),
+    rgba(255, 190, 120, 0) 70%
+  );
+  box-shadow: 0 0 10px rgba(255, 200, 130, 0.55);
+  animation: floatUp var(--dur) linear infinite;
+  animation-delay: var(--delay);
+  opacity: 0;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--op);
+  }
+  55% {
+    transform: translate(var(--sway), -55vh) scale(0.92);
+    opacity: var(--op);
+  }
+  100% {
+    transform: translate(calc(var(--sway) * -0.5), -118vh) scale(0.72);
+    opacity: 0;
+  }
+}
+
 .brand-header {
   position: fixed;
   top: 18px;
