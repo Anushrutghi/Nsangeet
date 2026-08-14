@@ -1,5 +1,5 @@
 /* Nsangeet service worker — network-first with app-shell cache fallback. */
-const CACHE = "nsangeet-v1";
+const CACHE = "nsangeet-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {

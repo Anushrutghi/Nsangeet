@@ -20,6 +20,7 @@ const yatraOne = Yatra_One({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://nsangeet.app"),
   title: "Nsangeet — नेपाली संगीतको रेडियो",
   description:
     "A cozy Nepali radio streaming Sabin Rai, John Rai, Bartika Eam Rai, Ankita Pun, Sajjan Raj Vaidya, Sushant KC, Samir Shrestha, The Elements and The Tribal Rain.",
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
     images: ["/images/nsangeet-logo.png"],
   },
   icons: {
-    icon: "/images/nsangeet-logo.png",
+    icon: "/icons/icon-192.png",
     apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.webmanifest",
@@ -54,8 +55,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    // suppressHydrationWarning: browser extensions inject rtrvr-* / other
+    // attributes onto <html> before React hydrates, which triggers a
+    // dev-only hydration warning that is not an app bug.
     <html
       lang="ne"
+      suppressHydrationWarning
       className={`${dmSans.variable} ${fraunces.variable} ${yatraOne.variable}`}
     >
       <body>

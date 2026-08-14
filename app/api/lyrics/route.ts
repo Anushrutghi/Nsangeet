@@ -23,7 +23,7 @@ const LRCLIB_IDS: Record<string, number> = {
   "ankitapun|puranobaasna": 35552735,
   "ankitapun|shizenro": 34674968,
   "sajjanrajvaidya|sastomutu": 7836693,
-  "sajjanrajvaidya|hataarindaibataasindai": 3077516,
+  "sajjanrajvaidya|hataarindaibataasindai": 35811401,
   "sajjanrajvaidya|sunakaanchi": 7526743,
   "sajjanrajvaidya|dhairya": 7423139,
   "sajjanrajvaidya|naganyamaya": 4920054,
@@ -35,8 +35,10 @@ const LRCLIB_IDS: Record<string, number> = {
   "samirshrestha|thamanahaat": 34507974,
   "samirshrestha|herana": 12389676,
   "samirshrestha|bujhideu": 7716373,
-  "samirshrestha|timibhayeakafi": 34127138,
-  "samirshrestha|timiley": 9898863,
+  // These IDs carry synced lyrics; the plain-only records for the same
+  // songs are avoided so every track gets karaoke highlighting.
+  "samirshrestha|timibhayeakafi": 34614278,
+  "samirshrestha|timiley": 25016368,
   "theelements|birsineyhauki": 34562999,
   "theelements|putali": 35813116,
   "theelements|sapanakomayalu": 35251162,
@@ -278,11 +280,21 @@ function editDistance(a: string, b: string): number {
 function matchScore(
   item: LrcLibItem,
   artistNorm: string,
-  trackNorm: string
+  trackNorm: string,
+  targetDuration: number | null = null
 ): number {
   const a = normalize(item.artistName ?? "");
   const t = normalize(item.trackName ?? "");
   let s = 0;
+  // Prefer the record that matches the video's length — LRCLIB holds
+  // multiple versions (studio, live, shortened edits) of the same song,
+  // and only the version whose duration matches the video will highlight
+  // in time.
+  if (targetDuration && item.duration) {
+    const diff = Math.abs(item.duration - targetDuration);
+    if (diff <= 6) s += 3;
+    else if (diff <= 15) s += 1;
+  }
   if (a === artistNorm) s += 6;
   else if (a.includes(artistNorm) || artistNorm.includes(a)) s += 4;
   else if (a.includes(artistNorm.slice(0, Math.max(4, artistNorm.length - 2)))) s += 2;
@@ -332,6 +344,15 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const artist = searchParams.get("artist")?.trim() ?? "";
   const track = searchParams.get("track")?.trim() ?? "";
+  // Optional: the actual duration of the YouTube video being played. Lets
+  // us pick the LRCLIB version (studio/live/edit) that matches the video
+  // so the highlight lands on the right words.
+  const targetDuration = (() => {
+    const raw = searchParams.get("duration")?.trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  })();
 
   if (!artist || !track) {
     return NextResponse.json(
@@ -350,7 +371,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(fromCache);
   }
 
-  // Fast path 2: known LRCLIB ID — one deterministic request.
+  // Fast path 2: known LRCLIB ID — one deterministic request. If the
+  // known record only has plain lyrics, keep it as a fallback and still
+  // run the search below in case a synced version exists under another
+  // record (e.g. Timiley, Hataarindai, Timi Bhayea Kafi).
+  let knownFallback: Record<string, unknown> | null = null;
   const knownId = LRCLIB_IDS[key];
   if (knownId) {
     try {
@@ -368,9 +393,13 @@ export async function GET(request: NextRequest) {
             artist: item.artistName,
             syncedLyrics: item.syncedLyrics,
             plainLyrics: item.plainLyrics,
+            recordDuration: item.duration ?? null,
           };
-          remember(key, data);
-          return NextResponse.json(data);
+          if (item.syncedLyrics) {
+            remember(key, data);
+            return NextResponse.json(data);
+          }
+          knownFallback = data;
         }
       }
     } catch {
@@ -407,7 +436,7 @@ export async function GET(request: NextRequest) {
     await sleep(450);
     for (const item of results) {
       if (!item.plainLyrics && !item.syncedLyrics) continue;
-      const score = matchScore(item, artistNorm, trackNorm);
+      const score = matchScore(item, artistNorm, trackNorm, targetDuration);
       // Require a real artist match before accepting (protects against
       // unrelated tracks sharing a word, e.g. "Chinta"). Falls back to
       // edit distance for DB-side typos.
@@ -425,6 +454,12 @@ export async function GET(request: NextRequest) {
   }
 
   if (!best || best.score < 6) {
+    // A known plain-only record beats nothing — use it before the curated
+    // fallback text.
+    if (knownFallback) {
+      remember(key, knownFallback);
+      return NextResponse.json(knownFallback);
+    }
     // Curated fallback for songs LRCLIB doesn't have at all. The app's
     // artist strings vary ("Sabin Rai & The Elektrix" vs "Sabin Rai"),
     // so try the full artist plus its base form (part before &/ft).
@@ -442,6 +477,7 @@ export async function GET(request: NextRequest) {
         artist,
         syncedLyrics: null,
         plainLyrics: fallback,
+        recordDuration: null,
       };
       remember(key, data);
       return NextResponse.json(data);
@@ -454,6 +490,7 @@ export async function GET(request: NextRequest) {
     artist: best.item.artistName,
     syncedLyrics: best.item.syncedLyrics,
     plainLyrics: best.item.plainLyrics,
+    recordDuration: best.item.duration ?? null,
   };
   remember(key, data);
   return NextResponse.json(data);

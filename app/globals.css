@@ -30,7 +30,7 @@ body {
   overflow: hidden;
 }
 
-/* ---------- Animated cartoon background ---------- */
+/* ---------- Background ---------- */
 
 .bg-stage {
   position: fixed;
@@ -38,100 +38,12 @@ body {
   overflow: hidden;
 }
 
-/* Slow Ken Burns drift — cinematic, emotional, like a music video. */
+/* Plain static background image — no filters, overlays, or animation. */
 .bg-image {
   position: absolute !important;
   inset: 0;
   width: 100% !important;
   height: 100% !important;
-  filter: url(#cartoonFilter);
-  animation: kenburns 42s ease-in-out infinite alternate;
-  will-change: transform;
-}
-
-@keyframes kenburns {
-  from {
-    transform: scale(1.02) translate(0%, 0%);
-  }
-  to {
-    transform: scale(1.14) translate(-2.5%, -1.5%);
-  }
-}
-
-/* Warm grade that breathes like a heartbeat. */
-.bg-grade {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at 50% 55%,
-    rgba(255, 175, 95, 0.14),
-    rgba(30, 8, 28, 0.28) 80%
-  );
-  animation: gradeBreathe 7s ease-in-out infinite alternate;
-  pointer-events: none;
-}
-
-@keyframes gradeBreathe {
-  from {
-    opacity: 0.55;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Soft vignette to pull focus to the center. */
-.bg-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 52%,
-    rgba(12, 5, 18, 0.42) 100%
-  );
-  pointer-events: none;
-}
-
-/* Drifting embers — dreamy floating light like a sad song. */
-.particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  overflow: hidden;
-}
-
-.particle {
-  position: absolute;
-  bottom: -14px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 226, 168, 0.95),
-    rgba(255, 190, 120, 0) 70%
-  );
-  box-shadow: 0 0 10px rgba(255, 200, 130, 0.55);
-  animation: floatUp var(--dur) linear infinite;
-  animation-delay: var(--delay);
-  opacity: 0;
-}
-
-@keyframes floatUp {
-  0% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0;
-  }
-  12% {
-    opacity: var(--op);
-  }
-  55% {
-    transform: translate(var(--sway), -55vh) scale(0.92);
-    opacity: var(--op);
-  }
-  100% {
-    transform: translate(calc(var(--sway) * -0.5), -118vh) scale(0.72);
-    opacity: 0;
-  }
 }
 
 .brand-header {
@@ -143,10 +55,8 @@ body {
   gap: 12px;
   padding: 8px 16px 8px 10px;
   border-radius: 18px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(20, 14, 10, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
   z-index: 20;
   animation: brandIn 0.8s ease;
@@ -226,10 +136,8 @@ body {
   gap: 6px;
   padding: 6px;
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(20, 14, 10, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   z-index: 20;
 }
 
@@ -247,7 +155,7 @@ body {
   height: 36px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.12);
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -290,12 +198,10 @@ body {
   border-radius: 16px;
   background: linear-gradient(
     135deg,
-    hsla(0, 0%, 100%, 0.22),
-    hsla(0, 0%, 100%, 0.08)
+    rgba(30, 22, 16, 0.97),
+    rgba(18, 13, 9, 0.97)
   );
-  border: 1px solid hsla(0, 0%, 100%, 0.3);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   z-index: 40;
   animation: menuIn 0.18s ease;
@@ -364,20 +270,18 @@ body {
   top: 50%;
   left: 22px;
   transform: translateY(-50%);
-  width: min(420px, 34vw);
+  width: min(440px, 34vw);
   max-height: min(70vh, 620px);
   display: flex;
   flex-direction: column;
-  padding: 16px 18px 18px;
-  border-radius: 22px;
+  padding: 14px 16px 16px;
+  border-radius: 20px;
   background: linear-gradient(
     135deg,
-    hsla(0, 0%, 100%, 0.14),
-    hsla(0, 0%, 100%, 0.05)
+    rgba(30, 22, 16, 0.94),
+    rgba(20, 14, 10, 0.94)
   );
-  border: 1px solid hsla(0, 0%, 100%, 0.2);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
   color: #fff;
   z-index: 50;
@@ -400,7 +304,7 @@ body {
   letter-spacing: 2px;
   text-transform: uppercase;
   color: hsla(0, 0%, 100%, 0.55);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .lyrics-state {
@@ -439,7 +343,6 @@ body {
   color: hsla(0, 0%, 100%, 0.42);
   opacity: 0;
   animation: lyricLineIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: inherit;
   transition:
     color 0.3s ease,
     transform 0.3s ease,
@@ -466,12 +369,11 @@ body {
   text-shadow:
     0 0 18px rgba(255, 225, 154, 0.85),
     0 2px 10px rgba(0, 0, 0, 0.6);
-  /* Fade/slide the line in first, then pop it — the line-in delay
-     (stagger) is inherited from the inline style, so the pop always
-     follows the entrance. */
+  /* No delays — the line lights up and pops the instant it becomes
+     active, so lyrics track the singer with zero lag. */
   animation:
     lyricLineIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-    lyricPop 0.45s cubic-bezier(0.18, 1.25, 0.4, 1) 0.55s forwards;
+    lyricPop 0.45s cubic-bezier(0.18, 1.25, 0.4, 1) forwards;
 }
 
 @keyframes lyricPop {
@@ -501,29 +403,16 @@ body {
   border-radius: 24px;
   background: linear-gradient(
     135deg,
-    hsla(0, 0%, 100%, 0.1),
-    hsla(0, 0%, 100%, 0.03)
+    rgba(30, 22, 16, 0.94),
+    rgba(18, 13, 9, 0.94)
   );
-  border: 1px solid hsla(0, 0%, 100%, 0.22);
-  backdrop-filter: blur(6px) saturate(1.15);
-  -webkit-backdrop-filter: blur(6px) saturate(1.15);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 hsla(0, 0%, 100%, 0.2),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.12),
     inset 0 -1px 0 hsla(0, 0%, 100%, 0.04);
   color: #fff;
   z-index: 100;
-}
-
-.glass-player::before {
-  content: "";
-  position: absolute;
-  inset: -30px;
-  border-radius: 40px;
-  background: hsla(42, 74%, 66%, 0.12);
-  filter: blur(35px);
-  z-index: -1;
-  pointer-events: none;
 }
 
 .player-top {
@@ -631,9 +520,7 @@ body {
   align-items: center;
   border: 1px solid hsla(0, 0%, 100%, 0.18);
   border-radius: 50%;
-  background: hsla(0, 0%, 100%, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: hsla(0, 0%, 100%, 0.12);
   font-size: 18px;
   color: hsla(0, 0%, 100%, 0.85);
   cursor: pointer;
@@ -680,7 +567,7 @@ body {
     bottom: 350px;
     left: 50%;
     transform: translateX(-50%);
-    width: min(500px, calc(100vw - 32px));
+    width: min(480px, calc(100vw - 32px));
     max-height: none;
     padding: 14px 16px;
     border-radius: 20px;
@@ -690,7 +577,7 @@ body {
     margin-bottom: 8px;
   }
   .lyrics-line {
-    font-size: 16px;
+    font-size: 17px;
     line-height: 1.5;
   }
   .topbar-cluster {
@@ -712,11 +599,11 @@ body {
   .lyrics-panel {
     top: 84px;
     bottom: 330px;
-    width: min(420px, calc(100vw - 20px));
+    width: min(420px, calc(100vw - 24px));
     padding: 12px 14px;
   }
   .lyrics-line {
-    font-size: 15px;
+    font-size: 16px;
   }
   .topbar-cluster {
     top: 12px;

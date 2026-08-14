@@ -12,6 +12,9 @@ type LyricsState = {
   status: "loading" | "ok" | "missing";
   lines: LyricLine[];
   plain: string;
+  // Duration of the audio the synced lyrics were made against (LRCLIB
+  // record duration). Used to calibrate against the real video timeline.
+  recordDuration: number | null;
 };
 
 const EMPTY_LYRICS: LyricsState = {
@@ -19,6 +22,7 @@ const EMPTY_LYRICS: LyricsState = {
   status: "loading",
   lines: [],
   plain: "",
+  recordDuration: null,
 };
 
 // Parse LRC timestamped lyrics ("[mm:ss.xx]text") into {time, text} pairs.
@@ -30,11 +34,11 @@ function parseLrc(lrc: string | null | undefined): LyricLine[] {
     const text = raw.replace(re, "").trim();
     if (!text) continue;
     re.lastIndex = 0;
+    // A line may carry several timestamps (a repeated chorus, e.g.
+    // "[00:10][00:45]text") — emit one entry per timestamp so the line
+    // re-highlights at every occurrence, like Spotify.
     let m: RegExpExecArray | null;
-    let first = true;
     while ((m = re.exec(raw)) !== null) {
-      if (!first) continue;
-      first = false;
       const min = parseInt(m[1], 10);
       const sec = parseInt(m[2], 10);
       const fracRaw = (m[3] ?? "0").padEnd(3, "0").slice(0, 3);
@@ -347,6 +351,8 @@ export default function RadioPlayer() {
   // Fetch lyrics for the current track whenever it changes. The result is
   // stored keyed by track so switching tracks shows the loading state
   // purely through render logic (no synchronous setState in the effect).
+  // The real video duration is sent along once known so the API can pick
+  // the synced version that matches the video's length.
   useEffect(() => {
     let cancelled = false;
     const ctrl = new AbortController();
@@ -354,12 +360,15 @@ export default function RadioPlayer() {
       artist: track.artist,
       track: track.title,
     });
+    if (mode === "yt" && duration > 0)
+      params.set("duration", String(Math.round(duration)));
     fetch(`/api/lyrics?${params.toString()}`, { signal: ctrl.signal })
       .then(async (res) => {
         if (!res.ok) throw new Error("not found");
         const data = (await res.json()) as {
           syncedLyrics?: string | null;
           plainLyrics?: string | null;
+          recordDuration?: number | null;
         };
         if (cancelled) return;
         setLyrics({
@@ -367,31 +376,76 @@ export default function RadioPlayer() {
           status: "ok",
           lines: parseLrc(data.syncedLyrics),
           plain: data.plainLyrics ?? "",
+          recordDuration: data.recordDuration ?? null,
         });
       })
       .catch(() => {
         if (!cancelled)
-          setLyrics({ trackKey, status: "missing", lines: [], plain: "" });
+          setLyrics({
+            trackKey,
+            status: "missing",
+            lines: [],
+            plain: "",
+            recordDuration: null,
+          });
       });
     return () => {
       cancelled = true;
       ctrl.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trackKey]);
+  }, [trackKey, duration, mode]);
 
   const currentLyrics: LyricsState =
     lyrics.trackKey === trackKey ? lyrics : EMPTY_LYRICS;
 
-  // Highlight + auto-scroll the lyric line matching the current playback time.
+  // Some music videos start with an intro while the lyrics are synced to
+  // the studio audio that begins later. Once the real video timeline is
+  // known, shift every lyric forward by the intro length so the highlight
+  // lands on the sung words — like Spotify. Applied once per track, and
+  // only when the video is clearly longer than the lyrics' source version
+  // (a >25s gap); a small tail is ignored as it's usually the outro.
+  const [lyricOffset, setLyricOffset] = useState(0);
+
+  useEffect(() => {
+    if (currentLyrics.trackKey !== trackKey) {
+      setLyricOffset(0);
+      return;
+    }
+    if (mode !== "yt" || !playerRef.current) {
+      setLyricOffset(0);
+      return;
+    }
+    if (currentLyrics.status !== "ok" || currentLyrics.lines.length === 0) {
+      setLyricOffset(0);
+      return;
+    }
+    const videoDur = playerRef.current.getDuration();
+    const lrcEnd = currentLyrics.lines[currentLyrics.lines.length - 1].time;
+    // Trust LRCLIB's stated duration only when it's consistent with the
+    // actual LRC content (some records carry the video length instead of
+    // the audio length). Otherwise fall back to the last lyric time.
+    const rec = currentLyrics.recordDuration;
+    const versionDur =
+      rec && rec >= lrcEnd * 0.85 ? Math.max(rec, lrcEnd) : lrcEnd;
+    if (!(videoDur > 0) || !(versionDur > 0)) {
+      setLyricOffset(0);
+      return;
+    }
+    const gap = videoDur - versionDur;
+    setLyricOffset(gap >= 30 ? Math.max(0, Math.min(180, gap - 5)) : 0);
+  }, [mode, duration, trackKey, currentLyrics]);
+
+  // Highlight + auto-scroll the lyric line matching the current playback
+  // time (plus the per-track calibration offset).
   const activeLyricIndex = useMemo(() => {
     let idx = -1;
     for (let i = 0; i < lyrics.lines.length; i++) {
-      if (lyrics.lines[i].time <= elapsed) idx = i;
+      if (lyrics.lines[i].time + lyricOffset <= elapsed) idx = i;
       else break;
     }
     return idx;
-  }, [lyrics.lines, elapsed]);
+  }, [lyrics.lines, elapsed, lyricOffset]);
 
   useEffect(() => {
     activeLineRef.current?.scrollIntoView({
@@ -512,7 +566,10 @@ export default function RadioPlayer() {
             setPlaying(false);
           }
           const dur = p.getDuration();
-          if (dur > 0) setDuration(dur);
+          // Round so the value is stable across ticks — the lyrics fetch
+          // and offset calibration depend on it and must not refetch on a
+          // drifting float.
+          if (dur > 0) setDuration(Math.round(dur));
         } catch {
           // ignore transient player errors
         }
@@ -609,11 +666,7 @@ export default function RadioPlayer() {
               {(currentLyrics.plain || "No lyrics available")
                 .split("\n")
                 .map((l, i) => (
-                  <div
-                    className="lyrics-line"
-                    key={i}
-                    style={{ animationDelay: `${Math.min(i * 45, 500)}ms` }}
-                  >
+                  <div className="lyrics-line" key={i}>
                     {l}
                   </div>
                 ))}
@@ -629,7 +682,6 @@ export default function RadioPlayer() {
                   }`}
                   key={i}
                   ref={i === activeLyricIndex ? activeLineRef : undefined}
-                  style={{ animationDelay: `${Math.min(i * 45, 500)}ms` }}
                 >
                   {l.text}
                 </div>
